@@ -36,11 +36,11 @@ tweets <- get_all_tweets(query = "#GunControl OR #GunViolence",
                          data_path = "data/", #data path to store the RDS file
                          n = 5000)  #set an upper limit of tweets, 100 is the default limit, n = Inf allows you to get all tweets matching the criteria  
 
-class(tweets1)#file format
-names(tweets1)#column names
-head(tweets1)#take a look at the data
-head(tweets1$text) #first several tweets
-tail(tweets1$text) #last several tweets
+class(tweets)#file format
+names(tweets)#column names
+head(tweets)#take a look at the data
+head(tweets$text) #first several tweets
+tail(tweets$text) #last several tweets
 
 #create your query based on keywords or hashtag
 tweets2 <- get_all_tweets(query = '"gun control" OR #GunControl', 
@@ -64,7 +64,7 @@ tweets_texas <- get_all_tweets(query = '"Texas" #GunControl OR #GunViolence',
                                file = "gun_texas", 
                                data_path = "data/",
                                n = 500)
-
+?get_all_tweets
 #creat your query based on a specific country and original tweet
 us_tweet_gun <- get_all_tweets(query = '#guncontrol',
                                country = 'US',
@@ -79,7 +79,7 @@ us_tweet_gun <- get_all_tweets(query = '#guncontrol',
 
 
 #bind the data we've collected
-gunissue_data <- bind_tweet_jsons(data_path = "data")
+gunissue_data <- bind_tweets(data_path = "data")
 head(gunissue_data)
 
 #remove duplicated tweets
