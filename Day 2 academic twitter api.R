@@ -11,12 +11,13 @@
 #install and load packages::academictwitteR, tidyverse, dbplyr, ggplot2, readr
 install.packages('academictwitteR')
 install.packages("scales")
-
+install.packages('tm')
 library(academictwitteR)
 library(readr)
 library(tidyverse)
 library(dbplyr)
 library(ggplot2)
+library(wordcloud)
 
 #alternative strategy to install academictwitteR
 #install.packages("devtools", dependencies = TRUE)
