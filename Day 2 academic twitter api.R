@@ -10,6 +10,7 @@
 
 #install and load packages::academictwitteR, tidyverse, dbplyr, ggplot2, readr
 install.packages('academictwitteR')
+install.packages("scales")
 
 library(academictwitteR)
 library(readr)
