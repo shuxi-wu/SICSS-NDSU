@@ -1,12 +1,14 @@
 # Day 3 NLP 
 
-install.packages('quanteda')
-install.packages('devtools')
-install.packages('spacyr')
-devtools::install_github("quanteda/quanteda.corpora", force = TRUE)
-devtools::install_github("quanteda/quanteda.sentiment", force = TRUE)
-devtools::install_github("quanteda/quanteda.textplots", force = TRUE)
-devtools::install_github("quanteda/quanteda.textstats", force = TRUE)
+#install.packages('quanteda')
+#install.packages('devtools')
+#install.packages('spacyr')
+#devtools::install_github("quanteda/quanteda.corpora", force = TRUE)
+#devtools::install_github("quanteda/quanteda.sentiment", force = TRUE)
+#devtools::install_github("quanteda/quanteda.textplots", force = TRUE)
+#devtools::install_github("quanteda/quanteda.textstats", force = TRUE)
+# or use install.packages('quanteda.corpora') etc
+ 
 
 library(quanteda)
 library(devtools)
