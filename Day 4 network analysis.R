@@ -3,222 +3,181 @@
 #######################################
 
 ##      Day 4 Network analysis       ##
-##  Part 1: Network analysis basics  ## 
+##      Part 2: Twitter network      ## 
+##       Standard API, rtweet        ## 
 ##        Author: Shuning Lu       ####
 
+#setwd("~/Desktop")
 
-#install and load packages::igraph, igraphdata
-install.packages("igraphdata")
-
-#load package
+library(rtweet)
 library(igraph)
-library(igraphdata)
-library(tidyverse)
+library(readr)
 
-#0. Create your first ten network graphs from scratch
-#an undirected network with three animals
-g1 <- graph( edges=c("Cat","Dog", "Cat","Rabbit", "Rabbit","Dog"),  directed=F ) 
-plot(g1)
-
-#a directed network with three animals
-g2 <- graph( c("Cat","Dog", "Cat","Rabbit", "Rabbit","Dog"))
-plot(g2)
-
-#a directed network with four animals
-g3 <- graph( edges=c("Cat","Dog", "Cat","Rabbit", "Rabbit","Dog", "Dog","Lahma", "Cat","Lahma"),  directed=T ) 
-plot(g3)
-
-#a directed network with four animals and four isolates 
-g4 <- graph( edges=c("Cat","Dog", "Cat","Rabbit", "Rabbit","Dog", "Dog","Lahma", "Cat","Lahma"), 
-             isolates=c("Lion", "Bear", "Tiger", "Wolf"), directed=T ) 
-plot(g4)
-
-#an empty graph with 10 nodes
-g5 <- make_empty_graph(10)
-plot(g5)
-
-#a full graph with 10 nodes
-g6 <- make_full_graph(10)
-plot(g6)
-
-#a star graph with 10 nodes
-g7 <- make_star(10)
-plot(g7, edge.size = 1, vertex.label = NA) 
-
-#a tree graph with 10 nodes
-g8 <- make_tree(10, children = 2)
-plot(g8, edge.size = 1, vertex.label = NA) 
-
-#a ring graph with 10 nodes
-g9 <- make_ring(10)
-plot(g9, edge.size = 1, vertex.label = NA) 
-
-#a random graph with 10 nodes
-g10 <- sample_gnm(n = 10, m = 10) 
-plot(g10, vertex.size = 6, vertex.label = NA)  
+#set up your Twitter bearer
+bearer_token <- read_file("bearer_token.txt")
 
 
-#1. Load buit-in data, Zachary’s Karate Club network
-data(karate)
+#1. retweet and mention network
+#build your query
+sicss <- search_tweets(q = "sicss2022", #keyword
+                       n = 500,         #number of tweets
+                       include_rts = TRUE) #include reweets
 
-#insepct data
-class(karate) #data format
-vcount(karate) #how many nodes?
-ecount(karate) #how many edges?
-V(karate) #a list of nodes
-V(karate)[1:5] #first five nodes
-E(karate) #a list of edges
-E(karate)[5] #the fifth edge
-vertex.attributes(karate) #node attributes
-edge.attributes(karate) #edge attributes
+#inspect your collected data
+head(sicss)
+dim(sicss)
+colnames(sicss)
 
-#Descriptive statistics
-k_degree <- degree(karate) #degree centrality
-k_degree
-hist(k_degree)
-which.max(k_degree)
-which.min(k_degree)
-
-k_close <- closeness(karate) #closeness centrality
-k_close <- round(k_close, 3) #round up into 3rd decimal place
-k_close
-sort(k_close) %>% #get top 5 nodes with closeness
-  tail(5)
-
-betweenness(karate)#betweenness centrality
-eigen_centrality(karate) #eigenvector centrality
-
-mean_distance(karate) #average path length
-distances(karate) #all shortest paths between nodes w/ edge weights
-distances(karate, weights = NA) ##all shortest paths between nodes w/o edge weights
-neighbors(karate, "Actor 33") #Actor 33's neighbors
-
-graph.density(karate,loop=FALSE) #network density
-diameter(karate, weights = NA) #netowrk size
-reciprocity(karate) # ratio of reciprocated edges *karate is an undirected network
-transitivity(karate, type="global") #ratio of triad
-
-#take a glance
-plot(karate)
-
-#finding cliques
-clique_num(karate)
-largest_cliques(karate)
-
-#community dectection
-karate.betw <- cluster_edge_betweenness(karate)
-?cluster_edge_betweenness
-karate.betw$modularity
-dendPlot(karate.betw, mode="hclust")
-plot(karate.betw,
-     karate)
-
-karate.cfg <- cluster_fast_greedy(karate)
-?cluster_fast_greedy
-karate.cfg$modularity
-dendPlot(karate.cfg, mode="hclust")
-plot(karate.cfg,
-     karate)
-
-V(karate)$community <- karate.cfg$membership
-colrs <- adjustcolor( c("gray50", "blue", "green"), alpha=.6)
-plot(karate, vertex.color=colrs[V(karate)$community])
-
-#k-core decomposition
-karate.kc <- coreness(karate, mode="all")
-colrs <- adjustcolor( c("gray50", "tomato", "gold", "blue"), alpha=.6)
-plot(karate, 
-     vertex.size = karate.kc*6, 
-     vertex.label = karate.kc, 
-     vertex.color = colrs[karate.kc])
+#create an igraph network object
+sicss.net <- network_graph(sicss, c("mention, retweet, reply")) #using all kinds of ties
+sicss.net
 
 
-#2. Read data from files
-#import gml data
-polblog <- read.graph("polblogs.gml",format = c("gml"))
+net <- network_graph(sicss, c("retweet"))
+net
 
-#for edgelist and nodelist, you can read them as follows
-#nodes <- read.csv("nodelist filename", header=T, as.is=T)
-#links <- read.csv("edgelist filename", header=T, as.is=T)
-#polblog <- graph_from_data_frame(d=links, vertices=nodes, directed=T) #convert it into network object
+#who are in the network? V() for vertext, shows all the nodes
+V(sicss.net)$name
+V(sicss.net)$name[10]
 
-#inspect data 
-class(polblog)  
-vcount(polblog)  
-ecount(polblog)  
-V(polblog) 
-V(polblog)$label  
-E(polblog)  
+#edge type in the network; E() for edge, shows all the edges
+E(sicss.net)$type
+#unique(E(sicss.net)$type)
 
-#destriptive statistics
-#for directed network, you need to know indegre, outdegree, and total degree 
-p_outdegree <- degree(polblog, mode = "out") #outdegree centrality
-p_indegree <- degree(polblog, mode = "in") #indegree centrality
-p_alldegree <- degree(polblog, mode = "all") #all degree centrality
-#identify the top 5 political blogs with inward links
-#identify the bottom 5 political blogs with inward links
+#remove self-loops from the network
+sicss.net <- simplify(sicss.net, remove.multiple = FALSE, remove.loop = TRUE) 
+#detach("tidyverse", unload = TRUE)
+?simplify
+#descriptive statistics
+vcount(sicss.net) #number of nodes
+ecount(sicss.net) #number of edges
+degree(sicss.net) #edges each node has
 
-#explore other descriptive statistis using code from #1
 
-#plotting and fine-tuning
-#plot the graph
-plot(polblog)
+library(tidyverse) #please load the package only after removing the self-loops
+#use detach("package:tidyverse", unload=TRUE) if you want to go back to simplify the network
 
-#clean up plot
-dev.off()
+#get the top 10 users in terms of degree
+degree<-degree(sicss.net)
+as.data.frame(degree)%>%arrange(desc(degree))%>%head(10)
 
-#remove self-loops
-polblog <- simplify(polblog, remove.multiple = F, remove.loops = T) 
+#top 10 nodes that receive mentions, replies and retweet
+in_degree <- degree(sicss.net, mode = "in") #in
+as.data.frame(in_degree)%>%arrange(desc(in_degree))%>%head(10)
 
-#remove isolates
-Isolated <- which(degree(polblog) == 0)
-polblog2 <- delete.vertices(polblog, Isolated)
+#top 10 nodes that mention, reply and retweet others
+out_degree <- degree(sicss.net, mode = "out")
+as.data.frame(out_degree)%>%arrange(desc(out_degree))%>%head(10)
 
-#assign colors to blogs based on political leanings
-V(polblog2)$color <- ifelse(V(polblog2)$value == 1, "red", "blue")
+#top 10 nodes with closeness - spread information quickly
+cl_degree <- closeness(sicss.net, mode = "out") # out: mentioning others
+as.data.frame(cl_degree)%>%arrange(desc(cl_degree))%>%head(10)
 
-#plog again
-plot(polblog2, 
-     main = paste("Political Blog Network"), 
-     usearrows = TRUE, edge.col = "grey50", edge.width = 0.25, 
-     vertex.size = 3,vertex.col = colors,edge.arrow.mode = 0, 
-     vertex.label = NA, layout = layout_with_kk)
+#top 10 nodes with betweenness - bridge that links different communities
+bt_degree <- betweenness(sicss.net, directed = TRUE)
+as.data.frame(bt_degree)%>%arrange(desc(bt_degree))%>%head(10)
 
-#change layout algorithms
-l1 <- layout_with_graphopt(polblog2, charge=0.02)
-plot(polblog2, 
-     main = paste("Political Blog Network"), 
-     usearrows = TRUE, edge.col = "grey50", edge.width = 0.25, 
-     vertex.size = 3,vertex.col = colors,edge.arrow.mode = 0, 
-     vertex.label = NA, layout = l1)
+#top 10 nodes with eigenvector centrality - influence over others
+eigen_degree <- eigen_centrality(sicss.net, directed = TRUE)$vector #eigen degree is a list, so add $vector!
+as.data.frame(eigen_degree)%>%arrange(desc(eigen_degree))%>%head(10)
 
-#set node size based on indgree 
-indeg <- degree(polblog2, mode="in")
-plot(polblog2, 
-     main = paste("Political Blog Network"), 
-     usearrows = TRUE, edge.col = "grey50", edge.width = 0.25, 
-     vertex.size = indeg*0.03,vertex.col = colors,edge.arrow.mode = 0, 
-     vertex.label = NA, layout = l1)
+#comparing centrality scores
+centralities <- cbind(in_degree, out_degree, cl_degree, bt_degree, eigen_degree)
+round(cor(centralities), 3) #correlation table: how in and out degrees are correlated?
 
-#label top blogs
-sort(indeg) %>% #get top 2 nodes  
-  tail(2)
-plot(polblog2, 
-     main = paste("Political Blog Network"), 
-     usearrows = TRUE, edge.col = "grey50", edge.width = 0.25, 
-     vertex.size = indeg*0.03,vertex.col = colors,edge.arrow.mode = 0, 
-     vertex.label = ifelse(degree(polblog2, mode = "in") > 270, V(polblog2)$label, NA),
-     vertex.label.dist = 2, vertex.label.color = "yellow", vertex.label.degree = -pi/2,
-     layout = l1)
 
+#network attributes (before was node characteristics)
+mean_distance(sicss.net) #average path length, mean steps to take to get to any person in the network
+graph.density(sicss.net) #how connected this network is, meaningful if compared with random graph
+diameter(sicss.net, weights = NA) #network size, degrees of separation
+reciprocity(sicss.net) #ratio of reciprocated edges, do ppl mention each other back etc?
+transitivity(sicss.net, type="global") #ratio of triad
+
+#finding cliques (only for undirected network, we have a directed network here)
+clique_num(sicss.net)
+largest_cliques(sicss.net)
+
+
+#plot
+plot(sicss.net)
+
+
+#let's plot, again!
+plot(sicss.net, 
+     edge.color = "grey", edge.width = 1, edge.curved = 0, #edge attributes
+     edge.arrow.mode = 1, edge.arrow.size = 0.2, #arrow attributes
+     vertex.size = 4, vertex.shape = "circle",    #vertex attributes
+     vertex.color = "darkblue", vertex.frame.color = "white",     #vertex attributes
+     vertex.label = NA, #label
+     layout=layout_with_fr) #force-directed layout algorithm
+
+plot(sicss.net, 
+     edge.color = "grey", edge.width = 1, edge.curved = 0, #edge attributes
+     edge.arrow.mode = 1, edge.arrow.size = 0.2,#arrow attributes
+     vertex.size = 4, vertex.shape = "circle",    #vertex attributes
+     vertex.color = "tomato", vertex.frame.color = "white",     #vertex attributes
+     vertex.label = NA, #label
+     layout = layout_with_kk) #stress-minimization layout algorithm
+
+#adding node size based on indegree
+V(sicss.net)$screen_name <- sicss.net$screen_name
+plot(sicss.net, 
+     edge.color = "grey", edge.width = 0.6, edge.curved = 0.4, #edge attributes
+     edge.arrow.mode=1, edge.arrow.size = 0.1,#arrow attributes
+     vertex.size = log(in_degree+8)*1.5, vertex.shape = "circle",    #vertex attributes
+     vertex.color = "skyblue", vertex.frame.color = "white",     #vertex attributes
+     vertex.label = ifelse(in_degree > 30, sicss$screen_name, NA), #only show top nodes
+     vertex.label.color = "black", 
+     vertex.label.cex = 0.6, vertex.label.degree = -pi/2,
+     layout=layout_with_fr) #stress-minimization layout algorithm
+
+#adding node size and label based on betweenness centrality, try that out!
+
+#community detection
+Isolated <- which(degree(sicss.net) == 0) #find isolates
+sicss.net <- delete.vertices(sicss.net, Isolated) #remove isolates
+cluster_walktrap(sicss.net) #walk for 4 edges by default, 18 groups, mod:0.79
+cluster_walktrap(sicss.net)[1]
+cluster_walktrap(sicss.net)[2]
+
+#try different step of walk, edge = 11; cluster walktrap used to see communities; want to hit higher moduality score
+cluster_walktrap(sicss.net, steps = 11) #15 groups, mod: 0.79
+sicss.comm<-cluster_walktrap(sicss.net, steps = 11)
+plot(sicss.comm, sicss.net, vertex.size=4, vertex.label=NA, 
+     edge.arrow.mode=0, layout=layout_with_fr) 
+
+sicss.net$community <- sicss.comm$membership #store membership 
+
+#use the membership to replot
+plot(sicss.net, 
+     edge.color = "grey", edge.width = 0.5, edge.curved = 0, #edge attributes
+     edge.arrow.mode = 1, edge.arrow.size = 0.1,#arrow attributes
+     vertex.size = log(10+bt_degree), vertex.shape = "circle",    #vertex attributes
+     vertex.color = membership(sicss.comm), vertex.frame.color = "white",     #vertex attributes
+     vertex.label = ifelse(in_degree > 30, sicss$screen_name, NA), #label
+     layout = layout_with_kk) #stress-minimization layout algorithm
+
+
+#other community detection algorithms for undirected network
+#https://igraph.org/r/doc/cluster_edge_betweenness.html
+sicss.comm1 <- cluster_edge_betweenness(as.undirected(sicss.net)) 
+plot(sicss.comm1, sicss.net, vertex.size=4, vertex.label=NA, 
+     edge.arrow.mode=0, layout=layout_with_fr) 
+
+#https://igraph.org/r/doc/cluster_fast_greedy.html
+sicss.comm2 <- cluster_edge_betweenness(as.undirected(sicss.net)) 
+plot(sicss.comm2, sicss.net, vertex.size=4, vertex.label=NA, 
+     edge.arrow.mode=0, layout=layout_with_fr) 
+
+
+#subsetting network
 #subset networkgraph
-p_lib <- induced.subgraph(polblog2, 
-                          V(polblog2)[value %in% c("0") ])
-plot(p_lib, 
-     main = paste("Liberal Political Blog Network"), 
-     usearrows = TRUE, edge.col = "grey50", edge.width = 0.25, 
-     vertex.size = 3, vertex.col = "blue", edge.arrow.mode = 0, 
-     vertex.label = NA)
-
-#how to subset conservative blog network?
-#compare the two subnetworks in terms of network attributes
+ndsu <- c("sicss_ndsu", "zoltanmajdik", "shuning_lu", "NDSUCOMMDept", "rossfcollins")
+sicss.ndsu <- induced.subgraph(sicss.net, 
+                               vids = ndsu)
+plot(sicss.ndsu, 
+     edge.color = "grey", edge.width = 1, edge.curved = 0, #edge attributes
+     edge.arrow.mode = 1, edge.arrow.size = 0.2, #arrow attributes
+     vertex.size = 4, vertex.shape = "circle",    #vertex attributes
+     vertex.color = "gold", vertex.frame.color = "white",     #vertex attributes
+     layout=layout_with_fr) #force-directed layout 
