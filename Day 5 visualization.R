@@ -108,7 +108,8 @@ madmen_relations <- madmen
 
 p <- simpleNetwork(madmen_relations) #uses networkd3 package
 p
-#saveWidget(p) lets you save this as a html file
+#saveWidget(p) #lets you save this as a html file
+
 
 # Or use igraph:
 network <- graph_from_data_frame(madmen_relations, directed=F)
