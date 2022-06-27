@@ -44,8 +44,7 @@ table(hate$outcome)
 #' What proportion of tweets are hate speech in these data?
 mean(hate$outcome)
 
-
-#' ### Building features
+#' ### Building features - core of traditional ML
 #' We will construct a few variables for now. What might be defining features of tweets with hate speech? Examples:
 #' 
 #'   - Length of the tweet?
@@ -53,7 +52,10 @@ mean(hate$outcome)
 #'   - Sentiment of the tweet?
 #'   - Profanity?
 #'   - Certain keywords?
+#'   - adding network analysis: hate speech users have less connections
 #' 
+
+## feature engineering: get R to create those features============
 ## Length of tweet
 hate$lengthoftweet <- nchar(hate$tweet)
 
@@ -84,18 +86,18 @@ hate_profanity <- profanity_by(hate$tweet)
 hate$nprofanity <- hate_profanity$profanity_count
 
 
-#' ### Getting our data ready for training vs. testing
+#Getting our data ready for training vs. testing (slicing data) ==============
 ## How many rows are 80%
 sample_size <- floor(0.8 * nrow(hate))
 sample_size
 
 ## Randomly select row numbers to include in training data
-set.seed(1234) # for reproducibility
+set.seed(1234) # for reproducibility: so everyone can get the same dataset
 train_ind <- sample(1:nrow(hate), size = sample_size)
 training_hate <- hate[train_ind, ] 
 holdout_hate <- hate[-train_ind,] # The - means "not"
 
-#' ### Implementing our model
+# Implementing our model/the actual ML part ====================
 
 ## Fitting logistic regression model in R
 model1 <- glm(outcome ~ lengthoftweet + 
@@ -106,7 +108,7 @@ model1 <- glm(outcome ~ lengthoftweet +
               family=binomial(link = "logit"))
 model1
 
-#' ### Testing performance of model
+#Testing performance of model =================
 #' In-sample Prediction (not preferred): Predicting using the training data used in the model fitting process.
 ## Extracting probabilities outcome = 1 from model
 training_hate$model1probs <- predict(model1, newdata = training_hate, type="response")
@@ -135,7 +137,7 @@ plot(rocCurve, print.thres = "best")
 holdout_hate <- holdout_hate %>%
   mutate(predictedhate = if_else(model1probs > .059, 1, 0))
 
-#' Did we get things right?
+#Did we get things right? metrics of predictions ===============
 #' Let's start with accuracy.
 #' 
 #'   - This is a parsimonious measure but doesn't really tell us where the errors are.
@@ -143,7 +145,7 @@ holdout_hate <- holdout_hate %>%
 ## Proportion of correct matches between truth and prediction
 mean(holdout_hate$outcome == holdout_hate$predictedhate)
 
-## Confusion Matrix
+## Confusion Matrix; here we can see the imbalanced dataset: a lot more non-hatespeech than hate speech
 table(truth = holdout_hate$outcome, predictions = holdout_hate$predictedhate)
 
 #' Specificity: ' 
@@ -164,7 +166,7 @@ truepos / (truepos + falseneg)
 
 
 
-# =======================================================
+# tidymodels version of ML =======================================================
 #' # Using `tidymodels`
 
 #' To get started, we will return to our original dataset. Let's subset the data to include only those columns we will use in analysis. This will make writing the data formula very easy.
@@ -208,9 +210,9 @@ tree_spec <- decision_tree() %>%
 
 
 
-#' ## Creating recipes 
+#' ## Creating recipes: ways to preprocess all the data
 library(themis)
-hate_recipe <- recipe(outcome ~ ., data = hate_train) %>% 
+hate_recipe <- recipe(outcome ~ ., data = hate_train) %>% # the . means all the columns in the dataset
   step_downsample(outcome)
 
 
