@@ -12,7 +12,6 @@
 library(lubridate) #for extracting dates
 library(tidyverse)
 library(quanteda)
-install.packages("stm")
 library(stm)
 library(wordcloud)
 library(rtweet)
